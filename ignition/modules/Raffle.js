@@ -6,9 +6,9 @@ module.exports = buildModule("RaffleModule", (m) => {
   const updateInterval = 1;
 
   const raffle = m.contract("Raffle", [entranceFee, subscriptionId, updateInterval], {
-    entranceFee: lockedAmount,
-    subscriptionId: lockedAmount,
-    updateInterval: lockedAmount,
+    entranceFee: entranceFee,
+    subscriptionId: subscriptionId,
+    updateInterval: updateInterval,
   });
 
   return { raffle };
