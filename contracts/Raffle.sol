@@ -26,8 +26,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     uint256 private immutable i_entranceFee;
     address payable[] private s_players;
     uint256 public s_subscriptionId;
-    bytes32 public keyHash =
-        0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
+    bytes32 public s_keyHash;
     uint16 public requestConfirmations = 3;
     uint32 public callbackGasLimit = 100000;
     uint32 public numWords = 1;
@@ -46,14 +45,16 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     constructor(
         uint256 entranceFee,
         uint256 subscriptionId,
-        uint256 updateInterval
-    ) VRFConsumerBaseV2Plus(0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B) {
+        uint256 updateInterval,
+        address vrfconsumer,
+        bytes32 keyHash
+    ) VRFConsumerBaseV2Plus(vrfconsumer) {
         s_subscriptionId = subscriptionId;
         i_entranceFee = entranceFee;
-
         s_raffleState = RaffleState.OPEN;
         s_lastTimeStamp = block.timestamp;
         i_interval = updateInterval;
+        s_keyHash = keyHash;
     }
 
     // function
@@ -97,7 +98,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         s_raffleState = RaffleState.CALCULATING;
         uint256 requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
-                keyHash: keyHash,
+                keyHash: s_keyHash,
                 subId: s_subscriptionId,
                 requestConfirmations: requestConfirmations,
                 callbackGasLimit: callbackGasLimit,
