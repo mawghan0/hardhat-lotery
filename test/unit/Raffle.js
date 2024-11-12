@@ -105,4 +105,14 @@ describe("Raffle", function () {
       expect(upkeepNeeded).to.equal(true)
     })
   })
+  describe("performUpKeep", function () {
+    it("can run if checkupkeep is true", async function () {
+      const { raffleContract, entranceFee, updateInterval } = await loadFixture(deployContractFixture)
+      await raffleContract.enterRaffle({ value: entranceFee })
+      await network.provider.send("evm_increaseTime", [updateInterval + 1])
+      await network.provider.send("evm_mine", [])
+      const tx = await raffleContract.performUpkeep("0x")
+      expect(tx)
+    })
+  })
 })
