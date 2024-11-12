@@ -135,4 +135,14 @@ describe("Raffle", function () {
       await expect(raffleContract.performUpkeep("0x")).to.be.revertedWithCustomError(raffleContract, "Raffle__UpkeepNotNeeded")
     })
   })
+  describe("fulfillRandomWords", function () {
+    it("can only be called after performUpkeep", async function () {
+      const { raffleContract, entranceFee, updateInterval, mockContract } = await loadFixture(deployContractFixture)
+      await raffleContract.enterRaffle({ value: entranceFee })
+      await network.provider.send("evm_increaseTime", [updateInterval + 1])
+      await network.provider.send("evm_mine", [])
+      await expect(mockContract.fulfillRandomWords(0, raffleContract.target)).to.be.revertedWith("nonexistent request")
+      await expect(mockContract.fulfillRandomWords(1, raffleContract.target)).to.be.revertedWith("nonexistent request")
+    })
+  })
 })
