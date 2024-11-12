@@ -84,7 +84,17 @@ describe("Raffle", function () {
       await network.provider.send("evm_mine", [])
       const { upkeepNeeded } = await raffleContract.checkUpkeep("0x")
       expect(upkeepNeeded).to.equal(false)
-
+    })
+    it("return false if raffle isn't open", async function () {
+      const { raffleContract, entranceFee, updateInterval } = await loadFixture(deployContractFixture)
+      await raffleContract.enterRaffle({ value: entranceFee })
+      await network.provider.send("evm_increaseTime", [updateInterval + 1])
+      await network.provider.send("evm_mine", [])
+      await raffleContract.performUpkeep("0x")
+      const raffleState = await raffleContract.getRaffleState()
+      const { upkeepNeeded } = await raffleContract.checkUpkeep("0x")
+      expect(upkeepNeeded).to.equal(false)
+      expect(raffleState).to.be.equal(1)
     })
   })
 })
