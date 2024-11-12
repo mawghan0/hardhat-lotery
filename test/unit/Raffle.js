@@ -96,5 +96,13 @@ describe("Raffle", function () {
       expect(upkeepNeeded).to.equal(false)
       expect(raffleState).to.be.equal(1)
     })
+    it("return true", async function () {
+      const { raffleContract, entranceFee, updateInterval } = await loadFixture(deployContractFixture)
+      await raffleContract.enterRaffle({ value: entranceFee })
+      await network.provider.send("evm_increaseTime", [updateInterval + 1])
+      await network.provider.send("evm_mine", [])
+      const { upkeepNeeded } = await raffleContract.checkUpkeep("0x")
+      expect(upkeepNeeded).to.equal(true)
+    })
   })
 })
