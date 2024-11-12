@@ -20,9 +20,9 @@ describe("Raffle", function () {
     // console.log('creating subs')
     await mockContract.fundSubscription(subscriptionId, VRF_SUB_FUND_AMOUNT)
     // console.log('funding subs')
-    const subs = await mockContract.getSubscription(subscriptionId)
+    // const subs = await mockContract.getSubscription(subscriptionId)
     // console.log('complete fund subs')
-    console.log(subs)
+    // console.log(subs)
 
     const entranceFee = ethers.parseEther("0.01");
     const updateInterval = 30;
@@ -68,10 +68,10 @@ describe("Raffle", function () {
       await raffleContract.enterRaffle({ value: entranceFee })
       await network.provider.send("evm_increaseTime", [updateInterval + 1])
       await network.provider.send("evm_mine", [])
-      const subs = await raffleContract.s_subscriptionId()
-      console.log(subs)
-      const subsId = await mockContract.getSubscription(subs)
-      console.log(subsId)
+      // const subs = await raffleContract.s_subscriptionId()
+      // console.log(subs)
+      // const subsId = await mockContract.getSubscription(subs)
+      // console.log(subsId)
       await raffleContract.performUpkeep("0x")
 
       await expect(raffleContract.enterRaffle({ value: entranceFee })).to.be.revertedWithCustomError(raffleContract, "Raffle__NotOpen");
