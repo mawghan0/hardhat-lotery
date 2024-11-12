@@ -64,7 +64,7 @@ describe("Raffle", function () {
       await expect(raffleContract.enterRaffle({ value: entranceFee })).to.be.emit(raffleContract, "RaffleEnter");
     })
     it("doesn't allow enter when raffle is calculating", async function () {
-      const { raffleContract, entranceFee, updateInterval, mockContract } = await loadFixture(deployContractFixture)
+      const { raffleContract, entranceFee, updateInterval } = await loadFixture(deployContractFixture)
       await raffleContract.enterRaffle({ value: entranceFee })
       await network.provider.send("evm_increaseTime", [updateInterval + 1])
       await network.provider.send("evm_mine", [])
@@ -77,5 +77,14 @@ describe("Raffle", function () {
       await expect(raffleContract.enterRaffle({ value: entranceFee })).to.be.revertedWithCustomError(raffleContract, "Raffle__NotOpen");
     })
   })
+  describe("checkUpkeep", function () {
+    it("return false if haven't sent any ETH", async function () {
+      const { raffleContract, updateInterval } = await loadFixture(deployContractFixture)
+      await network.provider.send("evm_increaseTime", [updateInterval + 1])
+      await network.provider.send("evm_mine", [])
+      const { upkeepNeeded } = await raffleContract.checkUpkeep("0x")
+      expect(upkeepNeeded).to.equal(false)
 
+    })
+  })
 })
