@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/src/v0.8/vrf/interfaces/VRFCoordinatorV2Interface.sol";
-import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
 error Raffle__NotEnoughETHEntered();
@@ -15,7 +14,7 @@ error Raffle__UpkeepNotNeeded(
     uint256 raffleState
 );
 
-contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
+contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     // Type declarations
     enum RaffleState {
         OPEN,
@@ -23,9 +22,10 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     }
 
     // state variabel
+    VRFCoordinatorV2Interface private immutable i_vrfCoordinator;
     uint256 private immutable i_entranceFee;
     address payable[] private s_players;
-    uint256 public s_subscriptionId;
+    uint64 public s_subscriptionId;
     bytes32 public s_keyHash;
     uint16 public requestConfirmations = 3;
     uint32 public callbackGasLimit = 100000;
@@ -44,11 +44,12 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
 
     constructor(
         uint256 entranceFee,
-        uint256 subscriptionId,
+        uint64 subscriptionId,
         uint256 updateInterval,
         address vrfconsumer,
         bytes32 keyHash
-    ) VRFConsumerBaseV2Plus(vrfconsumer) {
+    ) VRFConsumerBaseV2(vrfconsumer) {
+        i_vrfCoordinator = VRFCoordinatorV2Interface(vrfconsumer);
         s_subscriptionId = subscriptionId;
         i_entranceFee = entranceFee;
         s_raffleState = RaffleState.OPEN;
@@ -94,28 +95,21 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
                 uint256(s_raffleState)
             );
         }
-        bool enableNativePayment = false;
+
         s_raffleState = RaffleState.CALCULATING;
-        uint256 requestId = s_vrfCoordinator.requestRandomWords(
-            VRFV2PlusClient.RandomWordsRequest({
-                keyHash: s_keyHash,
-                subId: s_subscriptionId,
-                requestConfirmations: requestConfirmations,
-                callbackGasLimit: callbackGasLimit,
-                numWords: numWords,
-                extraArgs: VRFV2PlusClient._argsToBytes(
-                    VRFV2PlusClient.ExtraArgsV1({
-                        nativePayment: enableNativePayment
-                    })
-                )
-            })
+        uint256 requestId = i_vrfCoordinator.requestRandomWords(
+            s_keyHash,
+            s_subscriptionId,
+            requestConfirmations,
+            callbackGasLimit,
+            numWords
         );
         emit RequestRaffleWinner(requestId);
     }
 
     function fulfillRandomWords(
         uint256 /*requestId*/,
-        uint256[] calldata randomWords
+        uint256[] memory randomWords
     ) internal override {
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexOfWinner];
@@ -153,5 +147,9 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
 
     function getLatestTimeStamp() public view returns (uint256) {
         return s_lastTimeStamp;
+    }
+
+    function getInterval() public view returns (uint256) {
+        return i_interval;
     }
 }
