@@ -130,5 +130,9 @@ describe("Raffle", function () {
       await network.provider.send("evm_mine", [])
       await expect(raffleContract.performUpkeep("0x")).to.emit(raffleContract, "RequestRaffleWinner")
     })
+    it("revert when checkUpkeep is false", async function () {
+      const { raffleContract } = await loadFixture(deployContractFixture)
+      await expect(raffleContract.performUpkeep("0x")).to.be.revertedWithCustomError(raffleContract, "Raffle__UpkeepNotNeeded")
+    })
   })
 })
