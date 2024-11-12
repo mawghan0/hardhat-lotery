@@ -20,9 +20,7 @@ async function main() {
   const subsId = await VRFCoordinatorV2Mock.createSubscription()
   await subsId.wait(1)
   await VRFCoordinatorV2Mock.fundSubscription(subscriptionId, VRF_SUB_FUND_AMOUNT)
-  const tesSub = await VRFCoordinatorV2Mock.getSubscription(1);
-  console.log("--------------------------------------")
-  console.log(tesSub)
+  
 
 
 
@@ -36,6 +34,10 @@ async function main() {
   const raffle = await ethers.deployContract("Raffle", [entranceFee, subscriptionId, updateInterval, vrfconsumer, keyHash]);
 
   console.log("Raffle contract deployed to:", raffle.target);
+  await VRFCoordinatorV2Mock.addConsumer(subscriptionId, raffle.target)
+  const tesSub = await VRFCoordinatorV2Mock.getSubscription(1);
+  console.log("--------------------------------------")
+  console.log(tesSub)
 }
 
 // Run the deployment script
