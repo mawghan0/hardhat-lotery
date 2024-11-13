@@ -6,7 +6,7 @@ const { ethers, network } = require("hardhat");
 
 describe("Raffle", function () {
   async function deployContractFixture() {
-    const [gambler, gambler2] = await ethers.getSigners();
+    const [gambler, gambler2, gambler3, gambler4] = await ethers.getSigners();
     // mockContract
     const baseFee = ethers.parseEther("0.25");
     const gasPriceLink = 1e9;
@@ -31,7 +31,7 @@ describe("Raffle", function () {
     const raffleContract = await ethers.deployContract("Raffle", [entranceFee, subscriptionId, updateInterval, vrfconsumer, keyHash]);
     raffleContract.waitForDeployment()
     await mockContract.addConsumer(subscriptionId, raffleContract.target);
-    return { gambler, gambler2, mockContract, raffleContract, entranceFee, updateInterval }
+    return { gambler, gambler2, mockContract, raffleContract, entranceFee, updateInterval, gambler3, gambler4 }
   }
 
   describe("Deployment", function () {
@@ -135,6 +135,7 @@ describe("Raffle", function () {
       await expect(raffleContract.performUpkeep("0x")).to.be.revertedWithCustomError(raffleContract, "Raffle__UpkeepNotNeeded")
     })
   })
+
   describe("fulfillRandomWords", function () {
     it("can only be called after performUpkeep", async function () {
       const { raffleContract, entranceFee, updateInterval, mockContract } = await loadFixture(deployContractFixture)
@@ -144,30 +145,56 @@ describe("Raffle", function () {
       await expect(mockContract.fulfillRandomWords(0, raffleContract.target)).to.be.revertedWith("nonexistent request")
       await expect(mockContract.fulfillRandomWords(1, raffleContract.target)).to.be.revertedWith("nonexistent request")
     })
-    it("can only be called after performUpkeep", async function () {
-      const { raffleContract, entranceFee, updateInterval, mockContract, gambler2 } = await loadFixture(deployContractFixture)
-      await raffleContract.enterRaffle({ value: entranceFee })
+    it("test all of it", async function () {
+      const { raffleContract, entranceFee, updateInterval, mockContract, gambler, gambler2, gambler3, gambler4 } = await loadFixture(deployContractFixture)
       await raffleContract.connect(gambler2).enterRaffle({ value: entranceFee })
+      await raffleContract.enterRaffle({ value: entranceFee })
+      await raffleContract.connect(gambler3).enterRaffle({ value: entranceFee })
+      await raffleContract.connect(gambler4).enterRaffle({ value: entranceFee })
       await network.provider.send("evm_increaseTime", [updateInterval + 1])
       await network.provider.send("evm_mine", [])
 
       let randomWord
       const startingTimeStamp = await raffleContract.getLatestTimeStamp()
-      await new Promise(async (resolve, reject) => {
+      const reqRandomWord = new Promise(async (resolve, reject) => {
         raffleContract.once("RequestRaffleWinner", (requestId) => {
           try {
+            resolve(requestId);
+          } catch (error) {
+            console.log("emit failed")
+            reject(error);
+          }
+        })
+        await raffleContract.performUpkeep("0x")
+      })
+      randomWord = await reqRandomWord
+      console.log("Request Id:", randomWord)
+      await new Promise(async (resolve, reject) => {
+        raffleContract.once("WinnerPicked", async (recentWinner) => {
+          try {
             // Check if the emitted requestId is valid
-            console.log("Emitted requestId:", requestId.toString());
-            randomWord = requestId
+            console.log("Winner:", recentWinner.toString());
+            console.log(gambler.address)
+            console.log(gambler2.address)
+            console.log(gambler3.address)
+            console.log(gambler4.address)
+
+            // const recentWinner = await raffleContract.getRecentWinner()
+            const raffleState = await raffleContract.getRaffleState()
+            const endingTimeStamp = await raffleContract.getLatestTimeStamp()
+            const numPlayer = await raffleContract.getNumberOfPlayers()
+            expect(raffleState.toString()).to.be.equal("0")
+            expect(numPlayer.toString()).to.be.equal("0")
+            expect(startingTimeStamp).to.below(endingTimeStamp)
+
             resolve();
           } catch (error) {
             console.log("emit failed")
             reject(error);
           }
-        });
-        await expect(raffleContract.performUpkeep("0x")).to.emit(raffleContract, "RequestRaffleWinner")
+        })
+        await mockContract.fulfillRandomWords(1, raffleContract.target)
       })
-
     })
   })
 })

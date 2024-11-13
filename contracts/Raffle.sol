@@ -29,7 +29,7 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     bytes32 public s_keyHash;
     uint16 public requestConfirmations = 3;
     uint32 public callbackGasLimit = 100000;
-    uint32 public numWords = 2;
+    uint32 public numWords = 1;
 
     // Lottery Variables
     address private s_recentWinner;
