@@ -144,5 +144,30 @@ describe("Raffle", function () {
       await expect(mockContract.fulfillRandomWords(0, raffleContract.target)).to.be.revertedWith("nonexistent request")
       await expect(mockContract.fulfillRandomWords(1, raffleContract.target)).to.be.revertedWith("nonexistent request")
     })
+    it("can only be called after performUpkeep", async function () {
+      const { raffleContract, entranceFee, updateInterval, mockContract, gambler2 } = await loadFixture(deployContractFixture)
+      await raffleContract.enterRaffle({ value: entranceFee })
+      await raffleContract.connect(gambler2).enterRaffle({ value: entranceFee })
+      await network.provider.send("evm_increaseTime", [updateInterval + 1])
+      await network.provider.send("evm_mine", [])
+
+      let randomWord
+      const startingTimeStamp = await raffleContract.getLatestTimeStamp()
+      await new Promise(async (resolve, reject) => {
+        raffleContract.once("RequestRaffleWinner", (requestId) => {
+          try {
+            // Check if the emitted requestId is valid
+            console.log("Emitted requestId:", requestId.toString());
+            randomWord = requestId
+            resolve();
+          } catch (error) {
+            console.log("emit failed")
+            reject(error);
+          }
+        });
+        await expect(raffleContract.performUpkeep("0x")).to.emit(raffleContract, "RequestRaffleWinner")
+      })
+
+    })
   })
 })
