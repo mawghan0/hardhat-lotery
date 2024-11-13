@@ -168,16 +168,16 @@ describe("Raffle", function () {
         await raffleContract.performUpkeep("0x")
       })
       randomWord = await reqRandomWord
-      console.log("Request Id:", randomWord)
+      // console.log("Request Id:", randomWord)
       await new Promise(async (resolve, reject) => {
         raffleContract.once("WinnerPicked", async (recentWinner) => {
           try {
             // Check if the emitted requestId is valid
-            console.log("Winner:", recentWinner.toString());
-            console.log(gambler.address)
-            console.log(gambler2.address)
-            console.log(gambler3.address)
-            console.log(gambler4.address)
+            // console.log("Winner:", recentWinner.toString());
+            // console.log(gambler.address)
+            // console.log(gambler2.address)
+            // console.log(gambler3.address)
+            // console.log(gambler4.address)
 
             // const recentWinner = await raffleContract.getRecentWinner()
             const raffleState = await raffleContract.getRaffleState()
@@ -193,7 +193,7 @@ describe("Raffle", function () {
             reject(error);
           }
         })
-        await mockContract.fulfillRandomWords(1, raffleContract.target)
+        await mockContract.fulfillRandomWords("1", raffleContract.target)
       })
     })
   })

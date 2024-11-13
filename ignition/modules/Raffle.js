@@ -11,16 +11,10 @@ module.exports = buildModule("RaffleModule", (m) => {
     chainId = 11155111
   }
   const entranceFee = networkConfig[chainId]["entranceFee"];
-  const subscriptionId = 1;
-  const updateInterval = 1;
+  const subscriptionId = 36395314294488836763533778092371221205787919643777021840887313012435096974208;
+  const updateInterval = 30;
   const vrfconsumer = networkConfig[chainId]["vrfCoordinator"];
   const keyHash = (networkConfig[chainId]["keyHash"]);
-
-  // const mock = m.contractAt("VRFCoordinatorV2Mock", vrfconsumer) 
-  // console.log(mock.mock);
-  const mockModule = m.contractAt("VRFCoordinatorV2Mock", vrfconsumer)
-
-  console.log(mockModule.address)
 
   const raffle = m.contract("Raffle", [entranceFee, subscriptionId, updateInterval, vrfconsumer, keyHash], {
     entranceFee: entranceFee,

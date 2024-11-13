@@ -14,6 +14,8 @@ error Raffle__UpkeepNotNeeded(
     uint256 raffleState
 );
 
+// Author: Mawghan
+// Github: https://github.com/mawghan0
 contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     // Type declarations
     enum RaffleState {
