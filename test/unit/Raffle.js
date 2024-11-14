@@ -25,7 +25,7 @@ describe("Raffle", function () {
     // console.log(subs)
 
     const entranceFee = ethers.parseEther("0.01");
-    const updateInterval = 30;
+    const updateInterval = "30";
     const keyHash = "0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae";
     const vrfconsumer = mockContract.target;
     const raffleContract = await ethers.deployContract("Raffle", [entranceFee, subscriptionId, updateInterval, vrfconsumer, keyHash]);

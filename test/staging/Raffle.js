@@ -1,37 +1,46 @@
-const {
-  loadFixture,
-} = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { expect } = require("chai");
 const { ethers, network } = require("hardhat");
+const { abi, contractAddress } = require("./constant")
+require("dotenv/config")
 
 describe("Raffle", function () {
-  async function deployContractFixture() {
-    const [gambler, gambler2, gambler3, gambler4] = await ethers.getSigners();
-    // mockContract
-    const baseFee = ethers.parseEther("0.25");
-    const gasPriceLink = 1e9;
-    
-    const mockContract = await ethers.deployContract("VRFCoordinatorV2Mock", [baseFee, gasPriceLink])
-    await mockContract.waitForDeployment();
-    // console.log(`mock contract is deployed at: ${mockContract.target}`)
-    // rafleContract
-    const VRF_SUB_FUND_AMOUNT = ethers.parseEther("2")
-    const subscriptionId = 1;
-    await mockContract.createSubscription()
-    // console.log('creating subs')
-    await mockContract.fundSubscription(subscriptionId, VRF_SUB_FUND_AMOUNT)
-    // console.log('funding subs')
-    // const subs = await mockContract.getSubscription(subscriptionId)
-    // console.log('complete fund subs')
-    // console.log(subs)
+  const PRIVATE_KEY = process.env.PRIVATE_KEY
+  const INFURA_API_KEY = process.env.INFURA_API_KEY
+  it("Initializes all", async function () {
+    const provider = new ethers.JsonRpcProvider(`https://rpc.sepolia.org`)
+    const wallet = new ethers.Wallet(PRIVATE_KEY, provider)
+    const raffleSepoliaContract = new ethers.Contract(
+      contractAddress,
+      abi,
+      wallet
+    );
+    // console.log(raffleSepoliaContract.interface)
 
-    const entranceFee = ethers.parseEther("0.01");
-    const updateInterval = 30;
-    const keyHash = "0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae";
-    const vrfconsumer = mockContract.target;
-    const raffleContract = await ethers.deployContract("Raffle", [entranceFee, subscriptionId, updateInterval, vrfconsumer, keyHash]);
-    raffleContract.waitForDeployment()
-    await mockContract.addConsumer(subscriptionId, raffleContract.target);
-    return { gambler, gambler2, mockContract, raffleContract, entranceFee, updateInterval, gambler3, gambler4 }
-  }
+    const raffleEntranceFee = await raffleSepoliaContract.getEntranceFee()
+    const startingTimeStamp = await raffleSepoliaContract.getLatestTimeStamp()
+    console.log(`entranceFee: ${raffleEntranceFee})`)
+    console.log(`startingTimeStamp: ${startingTimeStamp}`)
+
+    await new Promise(async (resolve, reject) => {
+      raffleSepoliaContract.once("WinnerPicked", async () => {
+        try {
+          const recentWinner = await raffleSepoliaContract.getRecentWinner()
+          console.log(`winner: ${recentWinner}`)
+          const raffleState = await raffleSepoliaContract.getRaffleState()
+          const endingTimeStamp = await raffleSepoliaContract.getLastTimeStamp()
+          await expect(raffleSepoliaContract.getPlayer(0)).to.be.reverted
+          expect(raffleState.toString()).to.be.equal("0")
+          expect(startingTimeStamp).to.be.below(endingTimeStamp)
+          resolve()
+        } catch (error) {
+          console.log(error)
+          reject(error)
+        }
+      })
+      console.log("Entering Raffle...")
+      await raffleSepoliaContract.enterRaffle({ value: raffleEntranceFee })
+
+      console.log("Ok, time to wait...")
+    })
+  })
 })

@@ -10,6 +10,7 @@ module.exports = buildModule("RaffleModule", (m) => {
   } else if (networkName == "sepolia") {
     chainId = 11155111
   }
+  console.log(chainId)
   const entranceFee = networkConfig[chainId]["entranceFee"];
   const subscriptionId = 36395314294488836763533778092371221205787919643777021840887313012435096974208;
   const updateInterval = 30;
